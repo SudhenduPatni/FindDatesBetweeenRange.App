@@ -60,7 +60,7 @@ namespace FindDatesBetweeenRangeSln
 
                 if (skipWeeks > 0 && date.DayOfWeek == DayOfWeek.Sunday)
                 {
-                    addDays = skipWeeks * 7;
+                    addDays = (skipWeeks * 7) + 1;
                 }
             }
 
