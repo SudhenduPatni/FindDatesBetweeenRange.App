@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -15,50 +15,54 @@ namespace FindDatesBetweeenRangeSln
             Yearly = 4
         }
 
-        public static List<DateTime> GetDailyDatesBetweenRange(this DateTime fromDate, DateTime toDate, bool weekdays, int priorDays = 0, int skipDays = 0)
+        public static List<TodoDueDates> GetDailyDatesBetweenRange(this DateTime fromDate, DateTime toDate, bool weekdays, int priorDays = 0, int skipDays = 0)
         {
-            var dates = new List<DateTime>();
+            var dates = new List<TodoDueDates>();
 
             if (weekdays)
             {
-                for (DateTime date = fromDate; date <= toDate; date = date.AddDays(1))
+                for (DateTime dueDate = fromDate; dueDate <= toDate; dueDate = dueDate.AddDays(1))
                 {
-                    if (date.DayOfWeek == DayOfWeek.Monday ||
-                        date.DayOfWeek == DayOfWeek.Tuesday ||
-                        date.DayOfWeek == DayOfWeek.Wednesday ||
-                        date.DayOfWeek == DayOfWeek.Thursday ||
-                        date.DayOfWeek == DayOfWeek.Friday)
+                    if (dueDate.DayOfWeek == DayOfWeek.Monday ||
+                        dueDate.DayOfWeek == DayOfWeek.Tuesday ||
+                        dueDate.DayOfWeek == DayOfWeek.Wednesday ||
+                        dueDate.DayOfWeek == DayOfWeek.Thursday ||
+                        dueDate.DayOfWeek == DayOfWeek.Friday)
                     {
-                        dates.Add(date.AddDays(-priorDays));
+                        dates.Add(SetTodoDueDates(dueDate, priorDays));
                     }
                 }
             }
             else
             {
                 int addDays = skipDays <= 1 ? 1 : skipDays;
-                for (DateTime date = fromDate; date <= toDate; date = date.AddDays(addDays + 1))
+                for (DateTime dueDate = fromDate; dueDate <= toDate; dueDate = dueDate.AddDays(addDays + 1))
                 {
-                    dates.Add(date.AddDays(-priorDays));
+                    var todoDueDates = new TodoDueDates();
+                    todoDueDates.DueDates = duedate;
+                    todoDueDates.PriorToDates = duedate.AddDays(-priorDays);
+
+                    dates.Add(SetTodoDueDates(dueDate, priorDays));
                 }
             }
 
             return dates;
         }
 
-        public static List<DateTime> GetWeeklyDatesBetweenRange(DateTime fromDate, DateTime toDate, List<DayOfWeek> days, int priorDays = 0, int skipWeeks = 0)
+        public static List<TodoDueDates> GetWeeklyDatesBetweenRange(DateTime fromDate, DateTime toDate, List<DayOfWeek> days, int priorDays = 0, int skipWeeks = 0)
         {
-            var dates = new List<DateTime>();
+            var dates = new List<TodoDueDates>();
             int addDays = 1;
 
-            for (DateTime date = fromDate; date <= toDate; date = date.AddDays(addDays))
+            for (DateTime dueDate = fromDate; dueDate <= toDate; dueDate = dueDate.AddDays(addDays))
             {
                 addDays = 1;
-                if (days.Contains(date.DayOfWeek))
+                if (days.Contains(dueDate.DayOfWeek))
                 {
-                    dates.Add(date.AddDays(-priorDays));
+                    dates.Add(SetTodoDueDates(dueDate, priorDays));
                 }
 
-                if (skipWeeks > 0 && date.DayOfWeek == DayOfWeek.Sunday)
+                if (skipWeeks > 0 && dueDate.DayOfWeek == DayOfWeek.Sunday)
                 {
                     addDays = (skipWeeks * 7) + 1;
                 }
@@ -67,36 +71,9 @@ namespace FindDatesBetweeenRangeSln
             return dates;
         }
 
-        public static List<DateTime> GetWeeklyDatesBetweenRange2(DateTime fromDate, DateTime toDate, List<DayOfWeek> days, int priorDays = 0, int skipWeeks = 0)
+        public static List<TodoDueDates> GetMonthlyDatesBetweenRange(DateTime fromDate, DateTime toDate, int day, int priorDays = 0, int skipMonths = 0)
         {
-            var dates = new List<DateTime>();
-            var startDate = fromDate;
-            var dateInfo = DateTimeFormatInfo.CurrentInfo;
-            int startWeek = dateInfo.Calendar.GetWeekOfYear(fromDate, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday), endWeek = 53;
-
-
-            for (int year = fromDate.Year; year <= toDate.Year; year++)
-            {
-                if (year == toDate.Year)
-                    endWeek = dateInfo.Calendar.GetWeekOfYear(toDate, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
-
-                for (; startWeek <= endWeek; startWeek += skipWeeks + 1)
-                {
-                    var date = new DateTime(startDate.Year, startDate.Month, startDate.Day);
-                    if (date <= toDate)
-                        dates.Add(date.AddDays(-priorDays));
-                }
-
-                if (dates.Count > 0)
-                    startWeek = dateInfo.Calendar.GetWeekOfYear(dates[dates.Count - 1], CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday) + skipWeeks + 1;
-            }
-
-            return dates;
-        }
-
-        public static List<DateTime> GetMonthlyDatesBetweenRange(DateTime fromDate, DateTime toDate, int day, int priorDays = 0, int skipMonths = 0)
-        {
-            var dates = new List<DateTime>();
+            var dates = new List<TodoDueDates>();
             int startMonth = fromDate.Month, endMonth = 12;
 
             for (int year = fromDate.Year; year <= toDate.Year; year++)
@@ -106,9 +83,9 @@ namespace FindDatesBetweeenRangeSln
 
                 for (; startMonth <= endMonth; startMonth += skipMonths + 1)
                 {
-                    var date = new DateTime(year, startMonth, day);
-                    if (date <= toDate)
-                        dates.Add(date.AddDays(-priorDays));
+                    var dueDate = new DateTime(year, startMonth, day);
+                    if (dueDate <= toDate)
+                        dates.Add(SetTodoDueDates(dueDate, priorDays));
                 }
 
                 if (dates.Count > 0)
@@ -118,19 +95,35 @@ namespace FindDatesBetweeenRangeSln
             return dates;
         }
 
-        public static List<DateTime> GetYearlyDatesBetweenRange(DateTime fromDate, DateTime toDate, int day, int month, int priorDays = 0)
+        public static List<TodoDueDates> GetYearlyDatesBetweenRange(DateTime fromDate, DateTime toDate, int day, int month, int priorDays = 0)
         {
-            var dates = new List<DateTime>();
+            var dates = new List<TodoDueDates>();
 
             for (int year = fromDate.Year; year <= toDate.Year; year++)
             {
-                var date = new DateTime(year, month, day);
+                var dueDate = new DateTime(year, month, day);
 
-                if (date <= toDate)
-                    dates.Add(date.AddDays(-priorDays));
+                if (dueDate <= toDate)
+                    dates.Add(SetTodoDueDates(dueDate, priorDays));
             }
 
             return dates;
         }
+
+        public TodoDueDates SetTodoDueDates(DateTime dueDate, int priorDays)
+        {
+            var todoDueDates = new TodoDueDates();
+            
+            todoDueDates.DueDates = dueDate;
+            todoDueDates.PriorToDates = dueDate.AddDays(-priorDays);
+            
+            return todoDueDate;
+        }
+    }
+
+    public class TodoDueDates
+    {
+        public DateTime DueDates { get; set; }
+        public DateTime PriorToDates { get; set; }
     }
 }
